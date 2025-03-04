@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useShaderMixer } from "./shader-mixer-context"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -10,12 +10,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, Filter, Eye } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import ShaderPreview from "./shader-preview"
+import ShaderThumbnailGenerator from "./shader-thumbnail-generator"
 
 export default function ShaderLibrary() {
-  const { shaders, setShaderToInput, mixerState } = useShaderMixer()
+  const { shaders, setShaderToInput, mixerState, generateShaderThumbnail } = useShaderMixer()
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [previewShaderId, setPreviewShaderId] = useState<string | null>(null)
+  const [pendingThumbnails, setPendingThumbnails] = useState<string[]>([])
 
   const categories = ["all", ...new Set(shaders.map((shader) => shader.category))]
 
@@ -30,6 +32,23 @@ export default function ShaderLibrary() {
   const handleDragStart = (e: React.DragEvent, shaderId: string) => {
     e.dataTransfer.setData("shaderId", shaderId)
   }
+
+  // Function to handle thumbnail generation
+  const handleThumbnailGenerated = (shaderId: string, thumbnailDataUrl: string) => {
+    generateShaderThumbnail(shaderId, thumbnailDataUrl)
+    setPendingThumbnails(prev => prev.filter(id => id !== shaderId))
+  }
+
+  // Check for shaders that need thumbnails
+  useEffect(() => {
+    const shadersNeedingThumbnails = shaders.filter(
+      shader => !shader.thumbnail || shader.thumbnail.includes("placeholder.svg")
+    ).map(shader => shader.id)
+
+    if (shadersNeedingThumbnails.length > 0) {
+      setPendingThumbnails(shadersNeedingThumbnails)
+    }
+  }, [shaders])
 
   return (
     <div className="space-y-4">
@@ -102,6 +121,21 @@ export default function ShaderLibrary() {
           </div>
         ))}
       </div>
+
+      {/* Thumbnail generators */}
+      {pendingThumbnails.map(shaderId => {
+        const shader = shaders.find(s => s.id === shaderId)
+        if (!shader) return null
+
+        return (
+          <ShaderThumbnailGenerator
+            key={shaderId}
+            code={shader.code || DEFAULT_SHADER_CODE}
+            onThumbnailGenerated={(dataUrl) => handleThumbnailGenerated(shaderId, dataUrl)}
+          />
+        )
+      })}
+
       <Dialog open={!!previewShaderId} onOpenChange={(open) => !open && setPreviewShaderId(null)}>
         <DialogContent className="max-w-2xl p-0 overflow-hidden bg-black">
           <DialogHeader className="p-4 absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-black/80 to-transparent">
