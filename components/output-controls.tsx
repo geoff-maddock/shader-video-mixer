@@ -6,6 +6,7 @@ import { Slider } from "@/components/ui/slider"
 import { Input } from "@/components/ui/input"
 import { Settings, Clock, Film } from "lucide-react"
 import OutputPreview from "./output-preview"
+import OutputTransportControls from "./output-transport-controls" // Add this import
 
 export default function OutputControls() {
   const { mixerState, updateMixerProperty } = useShaderMixer()
@@ -13,6 +14,9 @@ export default function OutputControls() {
   return (
     <div className="space-y-4">
       <OutputPreview />
+
+      {/* Add the new transport controls component */}
+      <OutputTransportControls />
 
       <div className="space-y-3">
         <div className="flex items-center justify-between">
