@@ -103,18 +103,11 @@ export default function ShaderPreview({
       }
 
       // Default shader code if none provided
-      const shaderCode =
-        shader.code ||
-        `
-      void mainImage(out vec4 fragColor, in vec2 fragCoord) {
-        vec2 uv = fragCoord/iResolution.xy;
-        vec3 col = 0.5 + 0.5*cos(iTime+uv.xyx+vec3(0,2,4));
-        fragColor = vec4(col,1.0);
-      }
-    `
+      const shaderCode = shader?.code || DEFAULT_SHADER_CODE
+      const wrappedCode = shader?.category === "shadertoy" ? wrapShaderToyCode(shaderCode) : shaderCode
 
       // Create new shader program
-      const shaderProgram = new ShaderProgram(gl, shaderCode)
+      const shaderProgram = new ShaderProgram(gl, wrappedCode)
       shaderProgramRef.current = shaderProgram
       setIsCompiled(true)
       setErrors([])

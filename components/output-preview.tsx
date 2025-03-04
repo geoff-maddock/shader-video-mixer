@@ -55,7 +55,7 @@ export default function OutputPreview() {
             inputCanvases.forEach((inputElement) => {
               const inputIndex = Number.parseInt(inputElement.getAttribute("data-input-index") || "0")
               const inputCanvas = inputElement.querySelector("canvas")
-              if (!inputCanvas) return
+              if (!inputCanvas || inputCanvas.width <= 0 || inputCanvas.height <= 0) return
 
               // Calculate position based on index
               const x = (inputIndex % 2) * (canvas.width / 2)
@@ -74,7 +74,7 @@ export default function OutputPreview() {
             const firstInput = inputCanvases[0]
             if (firstInput) {
               const inputCanvas = firstInput.querySelector("canvas")
-              if (inputCanvas) {
+              if (inputCanvas && inputCanvas.width > 0 && inputCanvas.height > 0) {
                 ctx.globalAlpha = mixerState.inputs[0].opacity
                 ctx.drawImage(inputCanvas, 0, 0, canvas.width, canvas.height)
               }
@@ -85,7 +85,10 @@ export default function OutputPreview() {
               const inputElement = inputCanvases[i]
               const inputIndex = Number.parseInt(inputElement.getAttribute("data-input-index") || "0")
               const inputCanvas = inputElement.querySelector("canvas")
-              if (!inputCanvas) continue
+              if (!inputCanvas || inputCanvas.width <= 0 || inputCanvas.height <= 0) {
+                console.warn(`Skipping input ${inputIndex} - canvas not ready`)
+                continue
+              }
 
               // Set blend mode
               ctx.globalCompositeOperation = getCompositeOperation(mixerState.inputs[inputIndex].blendMode)
@@ -107,7 +110,7 @@ export default function OutputPreview() {
               if (!inputElement) continue
 
               const inputCanvas = inputElement.querySelector("canvas")
-              if (!inputCanvas) continue
+              if (!inputCanvas || inputCanvas.width <= 0 || inputCanvas.height <= 0) continue
 
               // Calculate position based on index
               const x = i * (canvas.width / 2)
@@ -124,9 +127,18 @@ export default function OutputPreview() {
             const activeInput = document.querySelector(`[data-input-index="${mixerState.activeInput}"]`)
             if (activeInput) {
               const inputCanvas = activeInput.querySelector("canvas")
-              if (inputCanvas) {
+              if (inputCanvas && inputCanvas.width > 0 && inputCanvas.height > 0) {
                 ctx.globalAlpha = mixerState.inputs[mixerState.activeInput].opacity
                 ctx.drawImage(inputCanvas, 0, 0, canvas.width, canvas.height)
+              } else {
+                // Draw a placeholder if canvas isn't ready
+                ctx.fillStyle = "#1f2937"
+                ctx.fillRect(0, 0, canvas.width, canvas.height)
+                ctx.fillStyle = "#9333ea"
+                ctx.font = "16px sans-serif"
+                ctx.textAlign = "center"
+                ctx.textBaseline = "middle"
+                ctx.fillText(`Input ${mixerState.activeInput + 1} is loading...`, canvas.width / 2, canvas.height / 2)
               }
             }
             break

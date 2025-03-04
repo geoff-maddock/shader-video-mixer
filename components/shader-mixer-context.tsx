@@ -44,6 +44,7 @@ type ShaderMixerContextType = {
   addEffect: (inputIndex: number, effect: string) => void
   removeEffect: (inputIndex: number, effect: string) => void
   addCustomShader: (shader: Partial<ShaderType>) => string // Returns the new shader ID
+  generateShaderThumbnail: (shaderId: string, thumbnailDataUrl: string) => void // Add this line
 }
 
 const defaultMixerState: MixerState = {
@@ -494,7 +495,7 @@ export function ShaderMixerProvider({ children }: { children: ReactNode }) {
     const newShader: ShaderType = {
       id: newShaderId,
       name: shader.name || "Custom Shader",
-      thumbnail: shader.thumbnail || "/placeholder.svg?height=150&width=150",
+      thumbnail: shader.thumbnail || "/placeholder.svg?height=150&width=150", // Will be replaced with generated thumbnail
       description: shader.description || "Custom shader code",
       category: shader.category || "custom",
       code: shader.code,
@@ -503,6 +504,15 @@ export function ShaderMixerProvider({ children }: { children: ReactNode }) {
 
     setShaders((prev) => [...prev, newShader])
     return newShaderId
+  }
+
+  // Add this function to handle shader thumbnail generation
+  const generateShaderThumbnail = (shaderId: string, thumbnailDataUrl: string) => {
+    setShaders(prevShaders =>
+      prevShaders.map(shader =>
+        shader.id === shaderId ? { ...shader, thumbnail: thumbnailDataUrl } : shader
+      )
+    )
   }
 
   const setShaderToInput = (shaderId: string, inputIndex: number) => {
@@ -574,7 +584,8 @@ export function ShaderMixerProvider({ children }: { children: ReactNode }) {
         togglePlayback,
         addEffect,
         removeEffect,
-        addCustomShader, // Add this line
+        addCustomShader,
+        generateShaderThumbnail, // Add this line
       }}
     >
       {children}
