@@ -4,6 +4,7 @@
 import { useEffect, useRef } from "react"
 import { ShaderProgram } from "@/utils/webgl"
 import { wrapShaderToyCode } from "@/lib/shader-utils"
+import { DEFAULT_SHADER_CODE } from "@/lib/constants"
 
 interface ShaderThumbnailGeneratorProps {
     code: string
@@ -37,8 +38,16 @@ export default function ShaderThumbnailGenerator({
             const mouse = [0, 0, 0, 0]
             const frame = 0
 
+            // Set uniforms before rendering
+            shaderProgram.setUniforms({
+                iResolution: resolution,
+                iTime: time,
+                iFrame: frame,
+                iMouse: mouse
+            })
+
             // Render the shader
-            shaderProgram.render({ resolution, time, frame, mouse })
+            shaderProgram.render(time)
 
             // Capture the rendered image
             const dataUrl = canvas.toDataURL("image/png")

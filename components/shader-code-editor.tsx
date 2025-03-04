@@ -7,14 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useShaderMixer } from "./shader-mixer-context"
 import { FileCode, Copy, Check } from "lucide-react"
-
-const DEFAULT_SHADER_CODE = `// Simple gradient shader
-void mainImage( out vec4 fragColor, in vec2 fragCoord )
-{
-    vec2 uv = fragCoord/iResolution.xy;
-    vec3 col = 0.5 + 0.5*cos(iTime+uv.xyx+vec3(0,2,4));
-    fragColor = vec4(col,1.0);
-}`
+import { DEFAULT_SHADER_CODE } from "@/lib/constants"
 
 export default function ShaderCodeEditor() {
   const { addCustomShader, setShaderToInput, mixerState } = useShaderMixer()

@@ -14,8 +14,6 @@ export default function OutputControls() {
   return (
     <div className="space-y-4">
       <OutputPreview />
-
-      {/* Add the new transport controls component */}
       <OutputTransportControls />
 
       <div className="space-y-3">

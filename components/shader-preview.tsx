@@ -7,6 +7,10 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ShaderProgram, WebGLError } from "@/utils/webgl"
 import ShaderDebugPanel from "./shader-debug-panel"
+import { wrapShaderWithEffects } from "@/utils/shader-effects"
+import { DEFAULT_SHADER_CODE } from "@/lib/constants"
+import { wrapShaderToyCode } from "@/lib/shader-utils"
+import { MixerEffect } from "./shader-mixer-context"
 
 interface ShaderPreviewProps {
   shaderId: string | null
@@ -14,7 +18,8 @@ interface ShaderPreviewProps {
   showDebug?: boolean
   opacity?: number
   blendMode?: string
-  effects?: string[]
+  effects?: MixerEffect[] // Update to MixerEffect type
+  effectsEnabled?: boolean
   isPlaying?: boolean
 }
 
@@ -25,6 +30,7 @@ export default function ShaderPreview({
   opacity = 1,
   blendMode = "normal",
   effects = [],
+  effectsEnabled = true,
   isPlaying: externalIsPlaying,
 }: ShaderPreviewProps) {
   const { shaders } = useShaderMixer()
@@ -106,8 +112,11 @@ export default function ShaderPreview({
       const shaderCode = shader?.code || DEFAULT_SHADER_CODE
       const wrappedCode = shader?.category === "shadertoy" ? wrapShaderToyCode(shaderCode) : shaderCode
 
+      // Process the shader code to include effects
+      const processedCode = wrapShaderWithEffects(wrappedCode)
+
       // Create new shader program
-      const shaderProgram = new ShaderProgram(gl, wrappedCode)
+      const shaderProgram = new ShaderProgram(gl, processedCode)
       shaderProgramRef.current = shaderProgram
       setIsCompiled(true)
       setErrors([])
@@ -170,6 +179,17 @@ export default function ShaderPreview({
             gl.blendEquation(gl.FUNC_ADD)
         }
 
+        // Prepare effect uniform values
+        const effectUniforms: Record<string, number> = {
+          uEffectsEnabled: effectsEnabled ? 1.0 : 0.0,
+        }
+
+        // Add each effect's uniform value based on enabled state and intensity
+        effects.forEach(effect => {
+          const uniformName = `uEffect${effect.id.charAt(0).toUpperCase() + effect.id.slice(1).replace(/-([a-z])/g, g => g[1].toUpperCase())}`
+          effectUniforms[uniformName] = effect.enabled ? (effect.intensity || 0.5) : 0.0
+        })
+
         // Update uniforms
         shaderProgram.setUniforms({
           iResolution: [gl.canvas.width, gl.canvas.height, 1.0],
@@ -178,11 +198,7 @@ export default function ShaderPreview({
           iFrame: Math.floor(time * 60),
           iMouse: mousePositionRef.current,
           iOpacity: opacity,
-          // Add effects as uniforms
-          iEffectBlur: effects.includes("blur") ? 1.0 : 0.0,
-          iEffectNoise: effects.includes("noise") ? 1.0 : 0.0,
-          iEffectVignette: effects.includes("vignette") ? 1.0 : 0.0,
-          iEffectChromatic: effects.includes("chromatic-aberration") ? 1.0 : 0.0,
+          ...effectUniforms
         })
 
         // Render frame
@@ -214,7 +230,7 @@ export default function ShaderPreview({
       }
       setIsCompiled(false)
     }
-  }, [shader, opacity, blendMode, effects, showDebug, effectiveIsPlaying])
+  }, [shader, opacity, blendMode, effects, showDebug, effectiveIsPlaying, effectsEnabled])
 
   const togglePlayback = () => {
     setIsPlaying(!isPlaying)
