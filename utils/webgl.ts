@@ -103,10 +103,10 @@ export class ShaderProgram {
     frameTime: number
     uniformValues: Record<string, any>
   } = {
-    fps: 0,
-    frameTime: 0,
-    uniformValues: {},
-  }
+      fps: 0,
+      frameTime: 0,
+      uniformValues: {},
+    }
   private vao: WebGLVertexArrayObject | null = null
 
   constructor(
@@ -202,6 +202,30 @@ export class ShaderProgram {
         this.debugInfo.uniformValues[name] = value
       }
     }
+
+    // Add specific handling for effect uniforms if needed
+    const effectUniformNames = [
+      "uEffectsEnabled",
+      "uEffectBlur",
+      "uEffectSharpen",
+      "uEffectNoise",
+      "uEffectPixelate",
+      "uEffectEdgeDetection",
+      "uEffectBloom",
+      "uEffectChromatic",
+      "uEffectVignette",
+      "uEffectColorShift",
+      "uEffectInvert",
+      "uEffectGrayscale",
+      "uEffectSepia"
+    ];
+
+    // Set default values for missing effect uniforms
+    effectUniformNames.forEach(name => {
+      if (uniforms[name] === undefined) {
+        uniforms[name] = 0.0; // Default to disabled/zero intensity
+      }
+    });
   }
 
   public render(time: number): void {

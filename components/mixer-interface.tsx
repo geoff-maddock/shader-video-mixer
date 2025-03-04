@@ -133,11 +133,9 @@ export default function MixerInterface() {
         {mixerState.inputs.map((input, index) => (
           <Card
             key={index}
-            className={`relative overflow-hidden border-2 ${
-              mixerState.activeInput === index ? "border-purple-500" : "border-gray-700"
-            } ${mixerState.mixMode === "single" && mixerState.activeInput !== index ? "hidden" : ""} ${
-              mixerState.mixMode === "split" && index > 1 ? "hidden" : ""
-            }`}
+            className={`relative overflow-hidden border-2 ${mixerState.activeInput === index ? "border-purple-500" : "border-gray-700"
+              } ${mixerState.mixMode === "single" && mixerState.activeInput !== index ? "hidden" : ""} ${mixerState.mixMode === "split" && index > 1 ? "hidden" : ""
+              }`}
             onClick={() => setActiveInput(index)}
             onDrop={(e) => handleDrop(e, index)}
             onDragOver={handleDragOver}
@@ -152,6 +150,7 @@ export default function MixerInterface() {
                   opacity={input.opacity}
                   blendMode={input.blendMode}
                   effects={input.effects}
+                  effectsEnabled={input.effectsEnabled}
                   isPlaying={mixerState.isPlaying}
                 />
               </div>

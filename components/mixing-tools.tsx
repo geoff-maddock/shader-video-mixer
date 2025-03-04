@@ -7,13 +7,22 @@ import { Slider } from "@/components/ui/slider"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Sliders, Layers, Wand2, Clock, Trash2, Plus } from "lucide-react"
+import { Switch } from "@/components/ui/switch";
 
 export default function MixingTools() {
-  const { mixerState, updateInputProperty, addEffect, removeEffect } = useShaderMixer()
-  const [newEffect, setNewEffect] = useState("")
+  const {
+    mixerState,
+    updateInputProperty,
+    addEffect,
+    removeEffect,
+    toggleEffect,
+    toggleEffectsChain,
+    updateEffectIntensity
+  } = useShaderMixer();
+  const [newEffect, setNewEffect] = useState("");
 
-  const activeInput = mixerState.inputs[mixerState.activeInput]
-  const hasActiveShader = !!activeInput.shaderId
+  const activeInput = mixerState.inputs[mixerState.activeInput];
+  const hasActiveShader = !!activeInput.shaderId;
 
   const blendModes = [
     "normal",
@@ -123,6 +132,18 @@ export default function MixingTools() {
         </TabsContent>
 
         <TabsContent value="effects" className="p-4 space-y-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium">Effects Chain</h3>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-400">Enabled:</span>
+              <Switch
+                checked={activeInput.effectsEnabled}
+                onCheckedChange={() => toggleEffectsChain(mixerState.activeInput)}
+                disabled={!hasActiveShader}
+              />
+            </div>
+          </div>
+
           <div className="flex items-center gap-2">
             <Select value={newEffect} onValueChange={setNewEffect} disabled={!hasActiveShader}>
               <SelectTrigger className="flex-1 bg-gray-800 border-gray-700">
@@ -130,10 +151,10 @@ export default function MixingTools() {
               </SelectTrigger>
               <SelectContent className="bg-gray-800 border-gray-700">
                 {availableEffects
-                  .filter((effect) => !activeInput.effects.includes(effect))
+                  .filter((effect) => !activeInput.effects.some(e => e.id === effect))
                   .map((effect) => (
                     <SelectItem key={effect} value={effect} className="capitalize">
-                      {effect.replace("-", " ")}
+                      {effect.replace(/-/g, " ")}
                     </SelectItem>
                   ))}
               </SelectContent>
@@ -145,8 +166,8 @@ export default function MixingTools() {
               className="bg-purple-900 hover:bg-purple-800 border-purple-700"
               onClick={() => {
                 if (newEffect) {
-                  addEffect(mixerState.activeInput, newEffect)
-                  setNewEffect("")
+                  addEffect(mixerState.activeInput, newEffect);
+                  setNewEffect("");
                 }
               }}
               disabled={!newEffect || !hasActiveShader}
@@ -162,16 +183,42 @@ export default function MixingTools() {
             )}
 
             {activeInput.effects.map((effect) => (
-              <div key={effect} className="flex items-center justify-between bg-gray-800 p-2 rounded-md">
-                <span className="capitalize text-sm">{effect.replace("-", " ")}</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
-                  onClick={() => removeEffect(mixerState.activeInput, effect)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+              <div key={effect.id} className="bg-gray-800 p-2 rounded-md space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={effect.enabled}
+                      onCheckedChange={() => toggleEffect(mixerState.activeInput, effect.id)}
+                    />
+                    <span className={`capitalize text-sm ${!effect.enabled ? "text-gray-500" : ""}`}>
+                      {effect.id.replace(/-/g, " ")}
+                    </span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                    onClick={() => removeEffect(mixerState.activeInput, effect.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                <div className="flex items-center gap-2 pl-7">
+                  <span className="text-xs text-gray-400 w-16">Intensity:</span>
+                  <Slider
+                    className="flex-grow"
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    value={[effect.intensity]}
+                    onValueChange={(value) => updateEffectIntensity(mixerState.activeInput, effect.id, value[0])}
+                    disabled={!effect.enabled}
+                  />
+                  <span className="text-xs w-8 text-right">
+                    {Math.round(effect.intensity * 100)}%
+                  </span>
+                </div>
               </div>
             ))}
           </div>
@@ -188,7 +235,7 @@ export default function MixingTools() {
                   max={5}
                   step={0.1}
                   value={[1.0]}
-                  onValueChange={() => {}}
+                  onValueChange={() => { }}
                   disabled={!hasActiveShader}
                 />
                 <span className="text-sm w-10">1.0x</span>
@@ -204,7 +251,7 @@ export default function MixingTools() {
                   max={10}
                   step={0.1}
                   value={[0]}
-                  onValueChange={() => {}}
+                  onValueChange={() => { }}
                   disabled={!hasActiveShader}
                 />
                 <span className="text-sm w-10">0.0s</span>
@@ -221,7 +268,7 @@ export default function MixingTools() {
                 max={60}
                 step={1}
                 value={[10]}
-                onValueChange={() => {}}
+                onValueChange={() => { }}
                 disabled={!hasActiveShader}
               />
               <span className="text-sm w-10">10s</span>
@@ -239,7 +286,7 @@ export default function MixingTools() {
               <div>
                 <label className="text-sm text-gray-400 mb-1 block">Parameter 1</label>
                 <div className="flex items-center gap-2">
-                  <Slider className="flex-1" min={0} max={1} step={0.01} value={[0.5]} onValueChange={() => {}} />
+                  <Slider className="flex-1" min={0} max={1} step={0.01} value={[0.5]} onValueChange={() => { }} />
                   <span className="text-sm w-10">0.50</span>
                 </div>
               </div>
@@ -247,7 +294,7 @@ export default function MixingTools() {
               <div>
                 <label className="text-sm text-gray-400 mb-1 block">Parameter 2</label>
                 <div className="flex items-center gap-2">
-                  <Slider className="flex-1" min={0} max={1} step={0.01} value={[0.3]} onValueChange={() => {}} />
+                  <Slider className="flex-1" min={0} max={1} step={0.01} value={[0.3]} onValueChange={() => { }} />
                   <span className="text-sm w-10">0.30</span>
                 </div>
               </div>
@@ -255,7 +302,7 @@ export default function MixingTools() {
               <div>
                 <label className="text-sm text-gray-400 mb-1 block">Parameter 3</label>
                 <div className="flex items-center gap-2">
-                  <Slider className="flex-1" min={0} max={1} step={0.01} value={[0.7]} onValueChange={() => {}} />
+                  <Slider className="flex-1" min={0} max={1} step={0.01} value={[0.7]} onValueChange={() => { }} />
                   <span className="text-sm w-10">0.70</span>
                 </div>
               </div>

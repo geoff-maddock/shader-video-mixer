@@ -1,6 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState, type ReactNode } from "react"
+import { DEFAULT_SHADER_CODE } from "@/lib/constants"
 
 export type ShaderType = {
   id: string
@@ -12,11 +13,18 @@ export type ShaderType = {
   isCustom?: boolean // Add this to identify custom shaders
 }
 
+export type MixerEffect = {
+  id: string;
+  enabled: boolean;
+  intensity: number;
+};
+
 export type MixerInput = {
   shaderId: string | null
   opacity: number
   blendMode: string
-  effects: string[]
+  effects: MixerEffect[];  // Change from string[] to MixerEffect[]
+  effectsEnabled: boolean;
 }
 
 export type MixerState = {
@@ -43,16 +51,21 @@ type ShaderMixerContextType = {
   togglePlayback: () => void
   addEffect: (inputIndex: number, effect: string) => void
   removeEffect: (inputIndex: number, effect: string) => void
+  toggleEffect: (inputIndex: number, effectId: string) => void;
+  toggleEffectsChain: (inputIndex: number) => void;
+  updateEffectIntensity: (inputIndex: number, effectId: string, intensity: number) => void;
+
   addCustomShader: (shader: Partial<ShaderType>) => string // Returns the new shader ID
   generateShaderThumbnail: (shaderId: string, thumbnailDataUrl: string) => void // Add this line
 }
 
+
 const defaultMixerState: MixerState = {
   inputs: [
-    { shaderId: null, opacity: 1, blendMode: "normal", effects: [] },
-    { shaderId: null, opacity: 1, blendMode: "normal", effects: [] },
-    { shaderId: null, opacity: 1, blendMode: "normal", effects: [] },
-    { shaderId: null, opacity: 1, blendMode: "normal", effects: [] },
+    { shaderId: null, opacity: 1, blendMode: "normal", effects: [], effectsEnabled: true },
+    { shaderId: null, opacity: 1, blendMode: "normal", effects: [], effectsEnabled: true },
+    { shaderId: null, opacity: 1, blendMode: "normal", effects: [], effectsEnabled: true },
+    { shaderId: null, opacity: 1, blendMode: "normal", effects: [], effectsEnabled: true },
   ],
   activeInput: 0,
   mixMode: "quad",
@@ -547,29 +560,76 @@ export function ShaderMixerProvider({ children }: { children: ReactNode }) {
     setMixerState((prev) => ({ ...prev, isPlaying: !prev.isPlaying }))
   }
 
-  const addEffect = (inputIndex: number, effect: string) => {
+  const addEffect = (inputIndex: number, effectId: string) => {
     setMixerState((prev) => {
-      const newInputs = [...prev.inputs]
-      if (!newInputs[inputIndex].effects.includes(effect)) {
+      const newInputs = [...prev.inputs];
+      const newEffect = {
+        id: effectId,
+        enabled: true,
+        intensity: 0.5 // Default intensity
+      };
+
+      if (!newInputs[inputIndex].effects.some(e => e.id === effectId)) {
         newInputs[inputIndex] = {
           ...newInputs[inputIndex],
-          effects: [...newInputs[inputIndex].effects, effect],
-        }
+          effects: [...newInputs[inputIndex].effects, newEffect],
+        };
       }
-      return { ...prev, inputs: newInputs as MixerState["inputs"] }
-    })
-  }
+      return { ...prev, inputs: newInputs as MixerState["inputs"] };
+    });
+  };
 
-  const removeEffect = (inputIndex: number, effect: string) => {
+  const removeEffect = (inputIndex: number, effectId: string) => {
     setMixerState((prev) => {
-      const newInputs = [...prev.inputs]
+      const newInputs = [...prev.inputs];
       newInputs[inputIndex] = {
         ...newInputs[inputIndex],
-        effects: newInputs[inputIndex].effects.filter((e) => e !== effect),
-      }
-      return { ...prev, inputs: newInputs as MixerState["inputs"] }
-    })
-  }
+        effects: newInputs[inputIndex].effects.filter((e) => e.id !== effectId),
+      };
+      return { ...prev, inputs: newInputs as MixerState["inputs"] };
+    });
+  };
+
+  const toggleEffectsChain = (inputIndex: number) => {
+    setMixerState((prev) => {
+      const newInputs = [...prev.inputs];
+      newInputs[inputIndex] = {
+        ...newInputs[inputIndex],
+        effectsEnabled: !newInputs[inputIndex].effectsEnabled,
+      };
+      return { ...prev, inputs: newInputs as MixerState["inputs"] };
+    });
+  };
+
+  const toggleEffect = (inputIndex: number, effectId: string) => {
+    setMixerState((prev) => {
+      const newInputs = [...prev.inputs];
+      newInputs[inputIndex] = {
+        ...newInputs[inputIndex],
+        effects: newInputs[inputIndex].effects.map(effect =>
+          effect.id === effectId
+            ? { ...effect, enabled: !effect.enabled }
+            : effect
+        ),
+      };
+      return { ...prev, inputs: newInputs as MixerState["inputs"] };
+    });
+  };
+
+  const updateEffectIntensity = (inputIndex: number, effectId: string, intensity: number) => {
+    setMixerState((prev) => {
+      const newInputs = [...prev.inputs];
+      newInputs[inputIndex] = {
+        ...newInputs[inputIndex],
+        effects: newInputs[inputIndex].effects.map(effect =>
+          effect.id === effectId
+            ? { ...effect, intensity }
+            : effect
+        ),
+      };
+      return { ...prev, inputs: newInputs as MixerState["inputs"] };
+    });
+  };
 
   return (
     <ShaderMixerContext.Provider
@@ -586,6 +646,9 @@ export function ShaderMixerProvider({ children }: { children: ReactNode }) {
         removeEffect,
         addCustomShader,
         generateShaderThumbnail, // Add this line
+        toggleEffectsChain,
+        toggleEffect,
+        updateEffectIntensity,
       }}
     >
       {children}

@@ -64,8 +64,12 @@ export default function OutputPreview() {
               const height = canvas.height / 2
 
               // Draw with opacity
-              ctx.globalAlpha = mixerState.inputs[inputIndex].opacity
-              ctx.drawImage(inputCanvas, x, y, width, height)
+              const currentInput = mixerState.inputs[inputIndex];
+              ctx.globalAlpha = currentInput.opacity;
+              ctx.drawImage(inputCanvas, 0, 0, canvas.width, canvas.height);
+
+              // Effects are applied in the shader directly 
+              // No additional processing needed here as effects are handled at the shader level
             })
             break
 
@@ -130,15 +134,9 @@ export default function OutputPreview() {
               if (inputCanvas && inputCanvas.width > 0 && inputCanvas.height > 0) {
                 ctx.globalAlpha = mixerState.inputs[mixerState.activeInput].opacity
                 ctx.drawImage(inputCanvas, 0, 0, canvas.width, canvas.height)
-              } else {
-                // Draw a placeholder if canvas isn't ready
-                ctx.fillStyle = "#1f2937"
-                ctx.fillRect(0, 0, canvas.width, canvas.height)
-                ctx.fillStyle = "#9333ea"
-                ctx.font = "16px sans-serif"
-                ctx.textAlign = "center"
-                ctx.textBaseline = "middle"
-                ctx.fillText(`Input ${mixerState.activeInput + 1} is loading...`, canvas.width / 2, canvas.height / 2)
+
+                // Effects are applied directly in the shader for now
+                // In a future implementation, we could apply Canvas2D post-processing here as well
               }
             }
             break
