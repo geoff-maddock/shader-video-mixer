@@ -92,7 +92,11 @@ export default function OutputPreview() {
 
               // Draw with opacity
               ctx.globalAlpha = mixerState.inputs[inputIndex].opacity
-              ctx.drawImage(inputCanvas, 0, 0, canvas.width, canvas.height)
+              if (inputCanvas && inputCanvas.width > 0 && inputCanvas.height > 0) {
+                ctx.drawImage(inputCanvas, 0, 0, canvas.width, canvas.height)
+              } else {
+                console.warn(`Skipping input ${inputIndex} - canvas not ready`)
+              }
             }
             break
 
